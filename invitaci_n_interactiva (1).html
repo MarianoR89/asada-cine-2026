@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asada & Cine Familiar - Mariano & Keyra</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #fdfaf6;
+            color: #4a3f35;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(229, 231, 235, 0.5);
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+        }
+        .btn-primary {
+            background-color: #d97706;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            background-color: #b45309;
+            transform: translateY(-2px);
+        }
+        .step-active {
+            border-left: 4px solid #d97706;
+            background-color: #fffbeb;
+        }
+    </style>
+</head>
+<body>
+    <!-- Chosen Palette: Atardecer en el Jardín (Ámbar, Terracota y Crema) -->
+    <!-- Application Structure Plan: 
+        1. Hero: Bienvenida de Mariano & Keyra y detalles logísticos.
+        2. RSVP Dinámico: Formulario para confirmar asistencia y elegir complemento (evita duplicidad).
+        3. Visualización de Gestión: Gráfico de dona que muestra el estado de los insumos compartidos.
+        4. Itinerario: Programa del día para dar claridad a los invitados.
+        5. Cine: Sección dedicada a la película Paddington.
+        6. Lista de Invitados: Visualización de los 26 invitados para transparencia.
+    -->
+    <!-- Visualization & Content Choices: 
+        - Chart.js (Doughnut): Para balancear los acompañamientos (bebidas vs botanas).
+        - Tarjetas de Invitados: Grid dinámico con iniciales.
+        - NO SVG: Uso de iconos Unicode y estilizado CSS.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <nav class="sticky top-0 z-50 glass-card px-6 py-4 flex justify-between items-center">
+        <div class="text-xl font-extrabold text-amber-800 italic">Asada&Cine</div>
+        <div class="hidden md:flex space-x-6 text-sm font-semibold uppercase tracking-wider">
+            <a href="#inicio" class="hover:text-amber-600">Inicio</a>
+            <a href="#rsvp" class="hover:text-amber-600">Confirmar</a>
+            <a href="#itinerario" class="hover:text-amber-600">Programa</a>
+            <a href="#invitados" class="hover:text-amber-600">Invitados</a>
+        </div>
+    </nav>
+
+    <main class="max-w-5xl mx-auto px-4 py-8">
+        
+        <!-- HERO -->
+        <section id="inicio" class="text-center mb-16 py-12 bg-amber-50 rounded-3xl border-2 border-amber-100 px-6">
+            <h1 class="text-5xl md:text-6xl font-extrabold mb-6 text-amber-900">Asada & Cine Familiar</h1>
+            <p class="text-lg text-gray-600 max-w-2xl mx-auto mb-8">
+                <strong>Mariano & Keyra</strong> los invitan a un día de convivencia, volcanes con queso y la magia de <strong>Paddington</strong>.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-left max-w-3xl mx-auto">
+                <div class="bg-white p-5 rounded-xl shadow-sm border-b-4 border-amber-500">
+                    <p class="text-[10px] text-amber-600 font-bold uppercase mb-1">📅 Fecha</p>
+                    <p class="font-bold text-gray-800">21 de Junio, 2026</p>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow-sm border-b-4 border-amber-500">
+                    <p class="text-[10px] text-amber-600 font-bold uppercase mb-1">📍 Lugar</p>
+                    <p class="font-bold text-gray-800">Picnic Avenida Jardín</p>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow-sm border-b-4 border-amber-500">
+                    <p class="text-[10px] text-amber-600 font-bold uppercase mb-1">🍽️ Menú</p>
+                    <p class="font-bold text-gray-800">Carnita & Volcanes</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- RSVP & CHART -->
+        <section id="rsvp" class="mb-16">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                <div class="glass-card p-8 rounded-3xl shadow-xl border-t-8 border-amber-600">
+                    <h2 class="text-3xl font-bold mb-6">Confirma tu lugar</h2>
+                    <form id="rsvpForm" class="space-y-6">
+                        <div>
+                            <label class="block text-sm font-bold mb-2 uppercase text-gray-500">¿Quién confirma?</label>
+                            <select id="guestSelect" class="w-full p-3 rounded-lg border border-gray-200 bg-white outline-none focus:ring-2 focus:ring-amber-500" required>
+                                <option value="">Selecciona tu nombre...</option>
+                            </select>
+                        </div>
+
+                        <div class="flex space-x-4">
+                            <button type="button" onclick="setAttendance(true)" id="btnYes" class="flex-1 py-3 rounded-xl font-bold border-2 border-gray-100 text-gray-400 hover:bg-green-50 transition-all">Sí, asistiré</button>
+                            <button type="button" onclick="setAttendance(false)" id="btnNo" class="flex-1 py-3 rounded-xl font-bold border-2 border-gray-100 text-gray-400 hover:bg-red-50 transition-all">No podré ir</button>
+                        </div>
+
+                        <div id="complementArea" class="hidden space-y-4 animate-fade-in">
+                            <label class="block text-sm font-bold uppercase text-gray-500">Elige un complemento para traer</label>
+                            <div id="optionsGrid" class="grid grid-cols-1 gap-2"></div>
+                        </div>
+
+                        <button type="submit" class="w-full py-4 btn-primary text-white rounded-xl font-bold shadow-lg shadow-amber-200 uppercase tracking-widest">Registrar Confirmación</button>
+                    </form>
+                </div>
+
+                <div class="flex flex-col items-center justify-center text-center">
+                    <h3 class="text-2xl font-bold mb-4">Balance del Banquete</h3>
+                    <div class="chart-container">
+                        <canvas id="compChart"></canvas>
+                    </div>
+                    <p id="statusMsg" class="mt-6 text-sm text-gray-500 italic px-8">Selecciona un complemento para ver cómo ayudas a completar el menú.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- PROGRAMA -->
+        <section id="itinerario" class="mb-16">
+            <h2 class="text-3xl font-bold mb-8 text-center">Itinerario del Día</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="p-6 rounded-2xl step-active">
+                    <span class="text-amber-600 font-bold">1:00 PM</span>
+                    <h4 class="text-lg font-bold">Bienvenida</h4>
+                    <p class="text-sm text-gray-500">Recepción, botanas y convivencia inicial.</p>
+                </div>
+                <div class="p-6 rounded-2xl bg-white border border-gray-100">
+                    <span class="text-amber-600 font-bold">2:00 PM</span>
+                    <h4 class="text-lg font-bold">Comida</h4>
+                    <p class="text-sm text-gray-500">Servicio de carne asada y volcanes recién hechos.</p>
+                </div>
+                <div class="p-6 rounded-2xl bg-white border border-gray-100">
+                    <span class="text-amber-600 font-bold">3:30 PM</span>
+                    <h4 class="text-lg font-bold">Sobremesa</h4>
+                    <p class="text-sm text-gray-500">Café, postres y juegos de mesa ligeros.</p>
+                </div>
+                <div class="p-6 rounded-2xl bg-white border border-gray-100">
+                    <span class="text-amber-600 font-bold">4:15 PM</span>
+                    <h4 class="text-lg font-bold">Cine: Paddington</h4>
+                    <p class="text-sm text-gray-500">Función estelar con palomitas en pantalla gigante.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- MOVIE CARD -->
+        <section class="mb-16 bg-slate-900 rounded-3xl p-8 text-white flex flex-col md:flex-row items-center gap-10 overflow-hidden relative">
+            <div class="w-40 h-60 bg-amber-500 rounded-lg flex-shrink-0 flex items-center justify-center shadow-2xl rotate-3">
+                <div class="text-center text-slate-900 p-4">
+                    <span class="text-4xl block mb-2">🐻</span>
+                    <p class="font-black text-xl leading-none">PADDINGTON</p>
+                    <p class="text-[8px] uppercase font-bold mt-2">Función Especial</p>
+                </div>
+            </div>
+            <div>
+                <h3 class="text-3xl font-bold text-amber-400 mb-4 italic">"Por favor, cuiden de este oso. Gracias."</h3>
+                <p class="text-slate-300 mb-6 leading-relaxed">
+                    Acompañaremos al oso más cortés del mundo en una aventura de comedia familiar perfecta para todas las edades. Diversión sana, mermelada y grandes mensajes.
+                </p>
+                <div class="flex gap-4">
+                    <div class="bg-slate-800 px-4 py-2 rounded-lg text-xs font-bold uppercase border border-slate-700">🍿 Palomitas</div>
+                    <div class="bg-slate-800 px-4 py-2 rounded-lg text-xs font-bold uppercase border border-slate-700">⭐ Todo Público</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ASISTENTE VIRTUAL AI -->
+        <section id="asistente" class="mb-16 glass-card p-8 rounded-3xl shadow-xl border-t-8 border-blue-800 bg-gradient-to-br from-blue-50 to-white">
+            <div class="flex items-center gap-4 mb-6">
+                <div class="w-12 h-12 md:w-16 md:h-16 bg-blue-800 rounded-full flex items-center justify-center text-2xl md:text-3xl shadow-lg flex-shrink-0">🐻</div>
+                <div>
+                    <h2 class="text-2xl md:text-3xl font-bold text-blue-900">Pregúntale a Paddington</h2>
+                    <p class="text-blue-700 text-xs md:text-sm">Asistente Virtual con IA para resolver tus dudas del evento.</p>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-2xl border border-blue-100 shadow-inner p-4 h-80 flex flex-col mb-4 overflow-hidden relative">
+                <div id="chatBox" class="flex-1 overflow-y-auto flex flex-col space-y-2 pr-2 scroll-smooth">
+                    <!-- Mensaje Inicial -->
+                    <div class="flex flex-col w-full items-start mb-4">
+                        <span class="text-[10px] text-gray-400 mb-1 px-1 uppercase font-bold">Paddington</span>
+                        <div class="max-w-[85%] md:max-w-[80%] rounded-2xl p-3 text-sm bg-slate-100 text-slate-800 self-start rounded-bl-none">
+                            ¡Hola! Soy Paddington. Mariano y Keyra me pidieron que ayudara a responder preguntas sobre la Asada y el Cine (me pagan con sándwiches de mermelada). ¿Tienes alguna duda sobre qué llevar, a qué hora llegar o sobre la comida?
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex gap-2">
+                <input type="text" id="chatInput" placeholder="Escribe tu pregunta aquí..." class="flex-1 p-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-500 text-sm" onkeypress="if(event.key === 'Enter') sendChatMessage()">
+                <button onclick="sendChatMessage()" class="bg-blue-800 hover:bg-blue-900 text-white px-4 md:px-6 py-3 rounded-xl font-bold transition-all flex items-center justify-center shadow-lg shadow-blue-200 text-sm">
+                    Enviar
+                </button>
+            </div>
+        </section>
+
+        <!-- INVITADOS GRID -->
+        <section id="invitados" class="mb-20">
+            <div class="flex justify-between items-end mb-8">
+                <div>
+                    <h2 class="text-3xl font-bold">Lista de Invitados</h2>
+                    <p class="text-gray-500 italic">Confirmando asistencia para 26 personas.</p>
+                </div>
+                <div class="bg-amber-100 px-4 py-2 rounded-lg text-amber-800 font-bold text-sm">
+                    <span id="counter">0</span> / 26 Listos
+                </div>
+            </div>
+            <div id="guestGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                <!-- JS Populated -->
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-white border-t border-gray-100 py-10 text-center text-gray-400 text-sm">
+        <p class="font-bold text-amber-800 mb-1 italic">Asada & Cine Familiar 2026</p>
+        <p>Anfitriones: Mariano & Keyra</p>
+    </footer>
+
+    <script>
+        const guests = [
+            "Mariano (Anfitrión)", "Keyra (Anfitriona)",
+            "Daniela de la Riva", "Fernanda de la Riva", "Ale de la Riva", "José de la Riva",
+            "César Peña", "Ale Peña", "Otniel Belín", "Mariela Belín",
+            "Jahaziel Herrera", "Carolina Herrera", "Gloria (Abuelita)",
+            "Maru", "Jesus Rios", "Gema Rios", "Abdiel Rios",
+            "Miriam Mejía", "Jorge Mejía",
+            "Samantha", "Santi", "David Flores", "Luis Cacho", "Fabio Solís",
+            "Yuli Delgado", "Patricia Segura"
+        ];
+
+        const complements = [
+            { id: 1, name: "Aguas de Sabor", cap: 2, cur: 0 },
+            { id: 2, name: "Botana Salada / Chips", cap: 3, cur: 0 },
+            { id: 3, name: "Hielo o Refrescos", cap: 2, cur: 0 },
+            { id: 4, name: "Postre para compartir", cap: 2, cur: 0 },
+            { id: 5, name: "Palomitas Cine", cap: 2, cur: 0 }
+        ];
+
+        let state = { attendance: null, selectedComp: null };
+        let chart;
+
+        let chatHistory = [];
+        const systemPrompt = `Eres Paddington, el osito cortés de la película. Estás ayudando a Mariano y Keyra a organizar su evento "Asada & Cine Familiar".
+        Detalles del evento que debes conocer:
+        - Fecha: Domingo 21 de Junio, 2026 a la 1:00 PM.
+        - Lugar: Picnic Avenida Jardín.
+        - Anfitriones: Mariano y Keyra.
+        - Invitados Totales: 26 personas (familia y amigos cercanos).
+        - Comida Principal: Carnita asada, volcanes con queso y guacamole (todo proveído por los anfitriones).
+        - Itinerario: 1:00 PM Bienvenida y botanas, 2:00 PM Comida fuerte, 3:30 PM Sobremesa/Postres, 4:15 PM Película Paddington.
+        - Dinámica RSVP: Los invitados deben confirmar asistencia y elegir un complemento para llevar (Aguas de sabor, Botana, Hielo/Refrescos, Postre, o Palomitas). No deben traer regalos ni gastar mucho dinero.
+        Instrucciones: Responde a las preguntas de los usuarios de forma muy amable, servicial, y con un toque de humor sutil relacionado con tu amor por la mermelada y los buenos modales. Tus respuestas deben ser cortas (máximo 2-3 párrafos).`;
+
+        // Implementación de retraso exponencial para reintentos en llamadas a la API
+        async function fetchWithRetry(url, options, retries = 3, delay = 1000) {
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const res = await fetch(url, options);
+                    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                    return res;
+                } catch (error) {
+                    if (i === retries - 1) throw error;
+                    await new Promise(res => setTimeout(res, delay * Math.pow(2, i)));
+                }
+            }
+        }
+
+        async function sendChatMessage() {
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if (!text) return;
+
+            appendMessage('user', text);
+            input.value = '';
+            
+            // Añadir el mensaje del usuario al historial
+            chatHistory.push({ role: 'user', parts: [{ text: text }] });
+            
+            const typingWrapperId = appendMessage('assistant', 'Pensando...', true);
+
+            const apiKey = ""; // API Key proveída por el entorno colaborativo
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+            
+            const payload = {
+                contents: chatHistory,
+                systemInstruction: {
+                    parts: [{ text: systemPrompt }]
+                }
+            };
+
+            try {
+                const response = await fetchWithRetry(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const result = await response.json();
+                const candidate = result.candidates?.[0];
+                
+                // Remover el indicador de carga
+                const typingEl = document.getElementById(typingWrapperId);
+                if(typingEl) typingEl.remove();
+
+                if (candidate && candidate.content?.parts?.[0]?.text) {
+                    const reply = candidate.content.parts[0].text;
+                    appendMessage('assistant', reply);
+                    // Añadir respuesta de la IA al historial
+                    chatHistory.push({ role: 'model', parts: [{ text: reply }] });
+                } else {
+                    appendMessage('assistant', 'Oh, lo siento mucho. Tuve un pequeño problema técnico (probablemente cayó un poco de mermelada en el teclado). ¿Podrías intentar de nuevo?');
+                }
+            } catch (e) {
+                const typingEl = document.getElementById(typingWrapperId);
+                if(typingEl) typingEl.remove();
+                appendMessage('assistant', 'Oh, una gran disculpa. Me ha dado un poco de indigestión tecnológica. Por favor, intenta de nuevo en unos minutos.');
+            }
+        }
+
+        function appendMessage(sender, text, isTyping = false) {
+            const chatBox = document.getElementById('chatBox');
+            const wrapper = document.createElement('div');
+            const id = 'msg-wrapper-' + Date.now();
+            wrapper.id = id;
+            wrapper.className = `flex flex-col w-full ${sender === 'user' ? 'items-end' : 'items-start'} mb-4 animate-fade-in`;
+            
+            const label = document.createElement('span');
+            label.className = "text-[10px] text-gray-400 mb-1 px-1 uppercase font-bold";
+            label.textContent = sender === 'user' ? 'Tú' : 'Paddington';
+            
+            const div = document.createElement('div');
+            div.className = `max-w-[85%] md:max-w-[80%] rounded-2xl p-3 text-sm shadow-sm ${sender === 'user' ? 'bg-amber-500 text-white self-end rounded-br-none' : 'bg-slate-100 text-slate-800 self-start rounded-bl-none'} ${isTyping ? 'animate-pulse text-slate-500 italic' : ''}`;
+            // Interpretar saltos de línea
+            div.innerHTML = text.replace(/\n/g, '<br>');
+            
+            wrapper.appendChild(label);
+            wrapper.appendChild(div);
+            chatBox.appendChild(wrapper);
+            chatBox.scrollTop = chatBox.scrollHeight;
+            
+            return id;
+        }
+
+        function init() {
+            const select = document.getElementById('guestSelect');
+            guests.sort().forEach(g => {
+                const o = document.createElement('option');
+                o.value = g; o.textContent = g;
+                select.appendChild(o);
+            });
+
+            renderGuests();
+            renderOptions();
+            initChart();
+        }
+
+        function renderGuests() {
+            const grid = document.getElementById('guestGrid');
+            grid.innerHTML = '';
+            guests.forEach(g => {
+                const div = document.createElement('div');
+                div.className = "p-3 bg-white border border-gray-100 rounded-xl flex items-center space-x-3 text-xs font-semibold";
+                div.innerHTML = `<div class="w-6 h-6 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center">${g[0]}</div><span>${g}</span>`;
+                grid.appendChild(div);
+            });
+        }
+
+        function renderOptions() {
+            const grid = document.getElementById('optionsGrid');
+            grid.innerHTML = '';
+            complements.forEach(c => {
+                const isFull = c.cur >= c.cap;
+                const btn = document.createElement('button');
+                btn.type = "button";
+                btn.disabled = isFull;
+                btn.className = `p-3 rounded-xl border-2 text-left flex justify-between items-center transition-all ${isFull ? 'bg-gray-50 border-gray-100 text-gray-300' : 'border-gray-100 hover:border-amber-300'}`;
+                btn.id = `comp-${c.id}`;
+                btn.onclick = () => selectComp(c.id);
+                btn.innerHTML = `<span class="text-sm font-bold">${c.name}</span> <span class="text-[9px] uppercase">${isFull ? 'Lleno' : 'Libre'}</span>`;
+                grid.appendChild(btn);
+            });
+        }
+
+        function setAttendance(val) {
+            state.attendance = val;
+            const y = document.getElementById('btnYes'), n = document.getElementById('btnNo'), a = document.getElementById('complementArea');
+            y.className = val ? "flex-1 py-3 rounded-xl font-bold border-2 border-green-500 bg-green-50 text-green-700" : "flex-1 py-3 rounded-xl font-bold border-2 border-gray-100 text-gray-400";
+            n.className = !val && val !== null ? "flex-1 py-3 rounded-xl font-bold border-2 border-red-500 bg-red-50 text-red-700" : "flex-1 py-3 rounded-xl font-bold border-2 border-gray-100 text-gray-400";
+            val ? a.classList.remove('hidden') : a.classList.add('hidden');
+        }
+
+        function selectComp(id) {
+            state.selectedComp = id;
+            complements.forEach(c => {
+                const el = document.getElementById(`comp-${c.id}`);
+                if (el && !el.disabled) el.className = c.id === id ? "p-3 rounded-xl border-2 border-amber-500 bg-amber-50 text-left flex justify-between items-center transition-all" : "p-3 rounded-xl border-2 border-gray-100 text-left flex justify-between items-center transition-all";
+            });
+            document.getElementById('statusMsg').innerHTML = `¡Genial! Al traer <strong>${complements.find(c=>c.id===id).name}</strong>, el menú estará perfectamente equilibrado.`;
+        }
+
+        function initChart() {
+            const ctx = document.getElementById('compChart').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: complements.map(c => c.name),
+                    datasets: [{
+                        data: complements.map(c => c.cur),
+                        backgroundColor: ['#f59e0b', '#d97706', '#b45309', '#78350f', '#451a03'],
+                        borderWidth: 0
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } }, cutout: '80%' }
+            });
+        }
+
+        document.getElementById('rsvpForm').onsubmit = (e) => {
+            e.preventDefault();
+            const g = document.getElementById('guestSelect').value;
+            if (!g || state.attendance === null) return alert("Completa los datos de confirmación.");
+            if (state.attendance && !state.selectedComp) return alert("Por favor elige un complemento.");
+            
+            alert(`¡Gracias ${g}! Tu respuesta ha sido registrada para Mariano & Keyra.`);
+            
+            if (state.attendance) {
+                complements.find(c => c.id === state.selectedComp).cur++;
+                chart.data.datasets[0].data = complements.map(c => c.cur);
+                chart.update();
+                renderOptions();
+                document.getElementById('counter').textContent = parseInt(document.getElementById('counter').textContent) + 1;
+            }
+            e.target.reset();
+            setAttendance(null);
+        };
+
+        window.onload = init;
+    </script>
+</body>
+</html>
